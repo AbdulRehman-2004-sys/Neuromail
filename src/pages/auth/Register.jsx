@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { FaEnvelope, FaExclamationTriangle, FaCopy, FaSeedling } from "react-icons/fa";
+import { IoCheckmarkOutline, IoCopyOutline } from "react-icons/io5";
 import { Link, useNavigate } from "react-router-dom"; // ✅ useNavigate for redirect
 import { toast } from "react-toastify";
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const [step, setStep] = useState(1);
   const [seedWords, setSeedWords] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+
+   const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(seedWords.join(" "));
+    setCopied(true);
+
+    // 2 seconds ke baad wapas copy icon dikhe
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
 
   const fetchSeedFromAPI = async () => {
     try {
@@ -37,13 +52,6 @@ export default function Register() {
 
   const handleUnderstand = () => fetchSeedFromAPI();
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(seedWords.join(" "));
-    toast.success("📋 Seed copied to clipboard!", {
-      position: "top-right",
-      autoClose: 2000,
-    });
-  };
 
   // ✅ Generate token on Next button
   const handleNext = async () => {
@@ -73,34 +81,41 @@ export default function Register() {
   return (
     <div className="login min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
 
-      <div className="w-full h-screen absolute top-0 left-0 block md:hidden bg-[rgba(0,0,255,0.5)]"></div>
-      {/* Navbar */}
-      <img className="w-52 mb-8 z-50" src="https://mailing.neuromail.digital/logoName.svg" alt="" />
+      <div className={`w-full min-h-screen fixed top-0 left-0 block md:hidden bg-[rgba(0,0,255,0.5)]`}></div>
 
+      {/* Navbar */}
+      <img className="w-52 mb-4 z-50 md:block hidden" src="https://mailing.neuromail.digital/logoName.svg" alt="" />
+      <div className="flex items-center space-x-2 mb-8 z-50 md:hidden">
+        <img src="/icons/Layer_1.png" alt="" />
+        <img className="" src="/icons/neuromail.png" alt="" />
+      </div>
       {/* Card */}
-      <div className="w-full h-auto md:h-[80vh] max-w-5xl rounded-2xl shadow-lg grid grid-cols-1 md:grid-cols-2 overflow-hidden z-50 md:bg-[url('/bg.png')]"
+      <div className="w-[88vw] h-auto md:min-h-[75vh] z-50 shadow-lg grid grid-cols-1 md:grid-cols-2 overflow-hidden "
       >
         {/* Left Side */}
-        <div className="p-8 flex flex-col justify-center md:bg-[rgba(0,0,255,0.5)] bg-cover bg-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
-            Create Your Neuromail Account
-          </h2>
-          <p className="text-gray-200 text-sm md:text-base">
-            Register securely with a generated seed phrase.
-          </p>
+        <div className=" bg-[length:150%] bg-left-top rounded-2xl md:bg-[url('/bg.png')] overflow-hidden mb-8 md:mb-0">
+          <div className="w-full h-full bg-transparent md:bg-[rgba(0,0,255,0.6)] flex flex-col justify-center md:px-16">
+            <h2 className="text-2xl text-center md:text-left md:text-3xl font-bold mb-4">
+              Create Your Neuromail Account
+            </h2>
+            <p className="text-gray-200 -mt-4 text-center md:text-left text-xl leading-relaxed">
+              Register with seed
+            </p>
+          </div>
         </div>
 
         {/* Right Side */}
-        <div className="p-8 flex flex-col justify-center bg-gray-100 text-gray-900">
+        <div className="p-8 px-6 flex flex-col rounded-2xl justify-center bg-[rgb(228,228,245)] text-gray-900">
           {step === 1 ? (
-            <>
+            <div className="px-2 md:px-8">
               <div className="flex flex-col items-center mb-4">
-                <FaExclamationTriangle className="text-4xl text-gray-700 mb-2" />
-                <h2 className="text-xl font-bold">Important Note</h2>
+                <div className="flex items-center justify-center mb-8 w-24 h-24 rounded-full bg-white">
+                  <FaExclamationTriangle className="text-4xl text-gray-700 mb-2" />
+                </div>
+                <h2 className="text-3xl font-bold">Important Note</h2>
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed mb-6">
-                On the next page you will see a secure seed phrase. This is the ONLY
-                way to recover your account. Store it safely.
+              <p className="text-xs font-semibold md:text-sm text-gray-700 leading-relaxed mb-6">
+                On the next page you will see a series of 16 words. This is your unique and private seed and it is the ONLY way to recover your wallet in case of loss or manifestation. It is your responsibility to write it down and store it in a safe place outside of the password manager app
               </p>
               <button
                 onClick={handleUnderstand}
@@ -115,31 +130,42 @@ export default function Register() {
                   Login here
                 </Link>
               </p>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="px-8">
               <div className="flex flex-col items-center mb-4">
-                <FaSeedling className="text-4xl text-gray-700 mb-2" />
-                <h2 className="text-xl font-bold">Your Seed</h2>
+                {/* <FaSeedling className="text-4xl text-gray-700 mb-2" /> */}
+                <div className="flex items-center justify-center mb-8 w-24 h-24 rounded-full bg-white">
+                  <img src="/icons/Seed.png" alt="" />
+                </div>
+                <h2 className="text-3xl font-bold">Your Seed</h2>
               </div>
-              <label className="font-semibold text-sm mb-2">Key Seed</label>
-              <div className="grid grid-cols-4 gap-2 mb-3">
+              <label className="font-semibold text-sm mb-2">{loading ? <TbLoader3 className="animate-spin text-xl" /> : "Key Seed"}</label>
+
+              <div className="flex flex-wrap gap-2 sm:gap-3 mb-3 bg-white p-3 sm:p-4 rounded-md justify-center sm:justify-start">
                 {seedWords.map((word, idx) => (
                   <div
                     key={idx}
-                    className="border border-blue-500 rounded-md px-2 py-1 text-sm text-center bg-white text-gray-900"
+                    className="inline-block w-auto border border-blue-500 rounded-md 
+                 px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-900 bg-white"
                   >
                     {word}
                   </div>
                 ))}
               </div>
+              
               <div className="flex justify-end mb-3">
                 <button
                   onClick={handleCopy}
-                  className="flex items-center text-sm text-gray-700 hover:text-blue-600"
+                  className="flex items-center text-sm text-gray-700 p-2 rounded "
                 >
-                  <FaCopy className="mr-1" /> Copy
+                  {copied ? (
+                    <IoCheckmarkOutline className="text-2xl" />
+                  ) : (
+                    <IoCopyOutline className="text-2xl" />
+                  )}
                 </button>
+
               </div>
               <p className="text-xs text-gray-600 mb-4">
                 Please write these down in case you lose your seed.
@@ -156,13 +182,17 @@ export default function Register() {
                   Login here
                 </Link>
               </p>
-            </>
+            </div>
           )}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="mt-6 text-xs text-gray-400 z-50">©Neuronus</div>
+      {/* Footer */}
+      <div className="mt-6 z-50 text-xl font-bold text-white md:text-black">
+        <h1 className="text-center">©Neuronus </h1>
+        <h1 className="ml-2 text-center text-[rgb(184,184,244)]">v2.23.21</h1>
+      </div>
     </div>
   );
 }

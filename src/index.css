@@ -32,3 +32,18 @@ html,body,#root{
     background-image: url("/bg.png");
   }
 }
+
+
+/* Remove border only from the editor BODY */
+.custom-quill .ql-container {
+  border: none !important;       /* removes bottom/side border */
+  max-height: 50vh;             /* fixed editor body height */
+  overflow-y: auto;              /* scroll if content exceeds */
+}
+
+/* Keep toolbar border intact */
+.custom-quill .ql-toolbar {
+  border: 1px solid #e5e7eb;     /* matches Tailwind's gray-300 */
+  border-bottom: none;           /* no double border with container */
+  border-radius: 0.375rem 0.375rem 0 0; /* optional rounded top */
+}

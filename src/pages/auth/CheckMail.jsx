@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { EmailContext } from "../../context/EmailContext";
+import { RxCross1 } from "react-icons/rx";
 //amckgoturndsmxsiwfbvfiurb3984
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ export default function VerifyEmail() {
             "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({
-            local_part: "rockdanis50022004",
-            domain: "123abcdefijklm4",
+            local_part: emailData.localPart,
+            domain: emailData.domainId,
           }),
         },
 
@@ -70,88 +71,106 @@ export default function VerifyEmail() {
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          local_part: "rockdanis50022004",
-          domain: "123abcdefijklm4",
+          local_part: emailData.localPart,
+          domain: emailData.domainId,
         }),
       })
-      console.log(response)
-
+      const responseData = await response.json();
+      console.log("Add Email response:", responseData);
+      localStorage.setItem("mailbox", JSON.stringify(responseData));
       if (response.ok) {
         navigate("/", { replace: true });
-        toast.success("Mailbox Created Successfully.")
+        toast.success("Mailbox created Successfully", {
+          style: {
+            background: "#ffffff", // white background
+            color: "#000000",      // black text
+          },
+          icon: null, // remove default green check icon
+        });
       }
     } catch (error) {
       console.log(error)
     }
   }
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      {/* Back button */}
-      <button
-        onClick={() => navigate("/create-mail")}
-        className="absolute top-4 right-4 text-gray-500 hover:text-red-500"
-        aria-label="Go Back"
-      >
-        <FaTimes size={22} />
-      </button>
+    <div className="relative min-h-screen flex items-center justify-center bg-gray-50 p-4 sm:p-6">
+      <div className="bg-white rounded-3xl w-full max-w-md sm:max-w-lg md:max-w-2xl lg:w-[42%] h-auto md:h-[80vh] px-6 sm:px-10 md:px-12 py-8 sm:py-16 md:py-24 text-center relative ">
 
-      <div className="bg-white shadow-md rounded-2xl p-10 w-full max-w-lg text-center">
-        <div className="flex justify-center mb-6">
+        {/* Back button */}
+        <button
+          onClick={() => navigate("/create-mail")}
+          className="absolute top-4 right-4 text-gray-500"
+          aria-label="Go Back"
+        >
+          <RxCross1 size={20} />
+        </button>
+
+        {/* Logo */}
+        <div className="flex justify-center mb-4 sm:mb-6">
           <img
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mail_%28iOS%29.svg/1024px-Mail_%28iOS%29.svg.png"
-            alt="Neuromail Logo"
-            className="w-12 h-12"
+            className="w-40 sm:w-48 md:w-52"
+            src="https://mailing.neuromail.digital/logoName.svg"
+            alt="Logo"
           />
         </div>
 
-        <h2 className="text-xl md:text-2xl font-semibold mb-6">
-          {status === "success" ? "Your address is verified" : "Verify your email"}
+        {/* Title */}
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6">
+          {status === "success"
+            ? "Your address is available"
+            : "Verify your email"}
         </h2>
 
         {status === "error" && (
-          <p className="text-red-500 text-sm mb-3">
+          <p className="text-red-500 text-sm sm:text-base mb-3">
             This email is not available. Please try another.
           </p>
         )}
 
-        <div className="relative w-full mb-5 mt-16">
-          <h1 className="text-left">Enter Email Address</h1>
+        {/* Input box */}
+        <div className="relative w-full mb-5 mt-8 sm:mt-12 md:mt-16">
+          <h1 className="text-sm sm:text-md text-left text-gray-600 font-semibold mb-1">
+            Enter Email Address
+          </h1>
           <input
             type="text"
             value={emailData.email}
             readOnly
-            className={`w-full border rounded-lg px-4 py-2 pr-10 focus:outline-none ${status === "error"
-              ? "border-red-400"
-              : status === "success"
-                ? "border-green-400"
-                : "border-gray-300"
-              }`}
+            className="w-full border text-gray-500 bg-[#edf0f3] rounded-lg px-4 py-3 pr-10 text-sm sm:text-base"
           />
+
           {status === "success" && (
-            <span className="absolute right-3 top-8 bg-green-500 text-white p-1 rounded-full text-sm">
+            <span className="absolute right-3 top-[2.4rem] sm:top-10 bg-green-800 text-white p-2 rounded-full text-xs sm:text-sm">
               <FaCheck />
             </span>
           )}
           {status === "error" && (
-            <span className="absolute right-3 top-2.5 bg-red-500 text-white p-1 rounded-full text-sm">
+            <span className="absolute right-3 top-[2.4rem] sm:top-10 bg-red-500 text-white p-2 rounded-full text-xs sm:text-sm">
               <FaTimes />
             </span>
           )}
         </div>
 
-        <button
-          onClick={addEmail}
-          disabled={loading}
-          className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-        >
-          Add Email
-        </button>
+        {/* Buttons */}
+        {status === "error" ? (
+          <button
+            onClick={() => navigate("/create-mail")}
+            className="w-full bg-blue-600 text-white font-medium py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm sm:text-base"
+          >
+            Try Again
+          </button>
+        ) : (
+          <button
+            onClick={addEmail}
+            className="w-full bg-blue-600 text-white font-medium py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm sm:text-base"
+          >
+            {loading ? "Adding..." : "Add Email"}
+          </button>
+        )}
       </div>
     </div>
+
   );
 }
 
-
-// {"id":"121zgeivwrJ4RhW","email":"abdul6002@neuromail.cloud"}
-// {"id":"121qiq2qbqg7fnp","email":"rockdanis5002@neuromail.cloud"}
 

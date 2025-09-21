@@ -27,15 +27,18 @@ const App = () => {
               </PrivateRoute>
             }
           >
-            <Route
+            {/* <Route
               path="/inbox"
               element={
                 <PrivateRoute>
                   <Inbox />
                 </PrivateRoute>
               }
-            />
-            <Route
+            /> */}
+           
+          </Route>
+
+           <Route
               path="/email-data"
               element={
                 <PrivateRoute>
@@ -43,7 +46,6 @@ const App = () => {
                 </PrivateRoute>
               }
             />
-          </Route>
 
 
           <Route

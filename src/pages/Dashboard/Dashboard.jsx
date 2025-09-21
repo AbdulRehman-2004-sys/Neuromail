@@ -1,39 +1,152 @@
 import {
-  FaInbox,
   FaRegFileAlt,
   FaPaperPlane,
   FaStar,
   FaExclamationTriangle,
-  FaTrash,
-  FaCog,
-  FaTh,
+  FaTrash
 } from "react-icons/fa";
-import { Outlet } from "react-router-dom";
 import ComposePopUp from "./components/ComposePopUp";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CiSearch } from "react-icons/ci";
 import ProfileCard from "./components/ProfileCard";
+import Inbox from "./components/Inbox";
+import { LuTrash2 } from "react-icons/lu";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
-  const [showCompose, setShowCompose] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const childRef = useRef(null);
   const navigate = useNavigate();
 
+  const mailbox = JSON.parse(localStorage.getItem("mailbox"));
   const emailData = JSON.parse(localStorage.getItem("emailData")) || {
     email: "user@example.com",
     localPart: "User",
   };
+  const allMails = JSON.parse(localStorage.getItem("allMails"))
+  // const allMails = [{email:"data"}]
   const token = localStorage.getItem("accessToken");
+
+
+  const [showCompose, setShowCompose] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [countRead, setCountRead] = useState();
+  const [filter, setFilter] = useState("all"); // all, read, unread, file
+  const [emails, setEmails] = useState([]);
+  const [search, setSearch] = useState("");
+  const [checked, setChecked] = useState(false)
+  console.log(checked)
+
+
+  const [selectedIds, setSelectedIds] = useState([]);       // ✅ selected child IDs
+  console.log(selectedIds)
+  // const allSelected = selectedIds.length === allMails.length; // ✅ derived
+  const allSelected = allMails.length > 0 && selectedIds.length === allMails.length;
+  const anySelected = selectedIds.length > 0; // 🔑 check if at least one is selected
+  console.log(allSelected)
+
+  // ✅ Toggle ALL from parent
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds([]); // unselect all
+    } else {
+      setSelectedIds(allMails.map((e) => e.id)); // select all
+    }
+  };
+
+  // ✅ Toggle single child
+  const toggleSingle = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
   const handleNaviagte = () => {
     navigate("/inbox");
   };
 
-  useEffect(() => {
-    // userInfo(), aiTemplate()
-  }, []);
+  // For search functionality
+  const clickfetchInboxEmails = async () => {
+    try {
+      const url = `https://dev.api.neuromail.space/api/mailbox/${mailbox.id}/emails/?email_type=inbox&is_seen=&is_starred=&search=&page=1`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Network response was not ok");
+
+      const data = await res.json();
+      console.log(data)
+      // setEmails(data.results || []); // ✅ update state
+    } catch (err) {
+      console.error("Error fetching emails:", err);
+    }
+  };
+  // 🔹 Function to call the API
+  const fetchInboxEmails = async (searchValue) => {
+    try {
+      const url = `https://dev.api.neuromail.space/api/mailbox/${mailbox.id}/emails/?email_type=inbox&is_seen=&is_starred=&search=${encodeURIComponent(searchValue)}&page=1`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Network response was not ok");
+
+      const data = await res.json();
+      setEmails(data.results || []); // ✅ update state
+    } catch (err) {
+      console.error("Error fetching emails:", err);
+    }
+  };
+
+  // 🔹 Input change handler
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    fetchInboxEmails(value); // ✅ call API as user types
+  };
+
+  //delete
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const mailbox = JSON.parse(localStorage.getItem("mailbox"));
+      const res = await fetch(
+        `https://dev.api.neuromail.space/api/mailbox/${mailbox.id}/emails/move-to-trash/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ emails: selectedIds }),
+        }
+      );
+
+      const data = await res.json();
+      console.log(data)
+      if (data && childRef?.current) {
+        setSelectedIds([]);
+        childRef.current.fetchEmails();
+        toast.success(data.message || "Email moved to trash");
+      }
+
+    } catch (error) {
+      console.error("Failed to delete Email:", error);
+      toast.error("Failed to delete Email");
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex bg-[#f6f8fc]">
@@ -73,13 +186,25 @@ export default function Dashboard() {
           {/* Menu */}
           <nav className="flex flex-col px-4 text-gray-700">
             <button
-              onClick={handleNaviagte}
-              className="flex items-center bg-white text-black font-medium gap-3 px-3 py-2 rounded-lg transition"
+              
+              className="flex items-center justify-between bg-white text-black font-medium gap-3 px-3 py-2 rounded-lg transition"
             >
-              <span className="text-lg text-blue-600">
-                <FaInbox />
-              </span>
-              Inbox
+              <div className="flex items-center gap-2">
+                <span className="text-lg text-blue-600">
+                  <img src="/icons/direct-inbox.png" alt="" />
+                </span>
+                Inbox
+              </div>
+
+              <div className="flex items-center gap-2">
+                <img onClick={() => {
+                  // 👇 Call child function from parent
+                  if (childRef.current) {
+                    childRef.current.fetchEmails();
+                  }
+                }} src="/icons/refresh-right-square.png" alt="" />
+                {countRead > 0 && <div className="text-white text-xs bg-blue-600 px-1 py-1 rounded-md">{countRead}</div>}
+              </div>
             </button>
 
             <SidebarItem icon={<FaRegFileAlt />} text="Drafts" />
@@ -125,7 +250,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Topbar */}
-        <header className="flex items-center justify-between bg-white w-[96%] mx-auto rounded-xl mb-3 shadow px-4 py-2">
+        <header className="flex items-center justify-between bg-white w-[96%] mx-auto rounded-xl mb-3 shadow px-4 py-3">
           {/* Left: Menu button for Mobile */}
           <div className="flex items-center gap-3">
             <button
@@ -141,6 +266,9 @@ export default function Dashboard() {
               <input
                 type="text"
                 placeholder="Search messages"
+                value={search}
+                onClick={clickfetchInboxEmails}
+                onChange={handleSearchChange} // 👈 API runs on typing
                 className="w-full pl-8 text-sm text-gray-500 bg-gray-100 rounded-md px-4 py-2 outline-none"
               />
             </div>
@@ -148,9 +276,8 @@ export default function Dashboard() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4 ml-4">
-            <FaTh className="text-gray-500 text-xl cursor-pointer hover:text-blue-500" />
-            <FaCog className="text-gray-500 text-xl cursor-pointer hover:text-blue-500" />
-
+            <img src="/icons/Frame 99245849.png" alt="" />
+            <img src="/icons/setting-2.png" alt="" />
             {/* User Info */}
             <div className="flex items-center gap-2">
               <div className="text-right hidden sm:block">
@@ -171,19 +298,65 @@ export default function Dashboard() {
 
         {/* Filters */}
         <div className="flex items-center justify-between gap-4 px-4 py-2 bg-white w-[96%] mx-auto rounded-xl shadow-sm text-sm">
-          <input type="checkbox" className="border border-gray-500" />
-          <div className="flex items-center gap-4 py-2 font-medium">
-            <button className="text-blue-600 ">All</button>
-            <button className="text-gray-600 hover:text-blue-500">Read</button>
-            <button className="text-gray-600 hover:text-blue-500">Unread</button>
-            <button className="text-gray-600 hover:text-blue-500">Has File</button>
+          <div className="flex items-center gap-12">
+
+
+            <input
+              type="checkbox"
+              checked={allSelected}       // ✅ derived from state
+              onChange={toggleAll}        // ✅ toggle all
+              className="appearance-none w-5 h-5 rounded border-2 border-gray-300 checked:bg-blue-600 focus:outline-none cursor-pointer"
+            />
+
+
+            {anySelected &&
+              <div className="relative group">
+                {/* Icon with hover bg */}
+                <div className="p-2 rounded-full hover:bg-gray-300 cursor-pointer">
+                  <LuTrash2 onClick={handleDelete} className="text-lg" />
+                </div>
+
+                {/* Tooltip */}
+                <span className="absolute left-1/2 -translate-x-1/2 -top-7 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  Delete
+                </span>
+              </div>}
+
+          </div>
+          {/* 🔵 Filter Buttons */}
+          <div className="flex items-center py-2 font-medium">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-2 py-1 rounded-md ${filter === "all" ? "bg-gray-200" : "text-gray-600"}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("read")}
+              className={`px-2 py-1 rounded-md ${filter === "read" ? "bg-gray-200" : "text-gray-600"}`}
+            >
+              Read
+            </button>
+            <button
+              onClick={() => setFilter("unread")}
+              className={`px-2 py-1 rounded-md ${filter === "unread" ? "bg-gray-200" : "text-gray-600"}`}
+            >
+              Unread
+            </button>
+            <button
+              onClick={() => setFilter("file")}
+              className={`px-2 py-1 rounded-md ${filter === "file" ? "bg-gray-200" : "text-gray-600"}`}
+            >
+              Has File
+            </button>
           </div>
         </div>
 
         {/* Email Content */}
         <div className="flex-1 flex items-center justify-center text-blue-600 text-lg">
-          <Outlet />
+          <Inbox ref={childRef} checked={checked} search={emails} filter={filter} setCountRead={setCountRead} selectedIds={selectedIds} toggleSingle={toggleSingle} />
         </div>
+
 
         {/* Compose Popup */}
         {showCompose && <ComposePopUp onClose={() => setShowCompose(false)} />}
@@ -196,9 +369,8 @@ export default function Dashboard() {
 function SidebarItem({ icon, text, active }) {
   return (
     <button
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
-        active ? "bg-white text-black font-medium" : "hover:bg-gray-100 text-gray-700"
-      }`}
+      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${active ? "bg-white text-black font-medium" : "hover:bg-gray-100 text-gray-700"
+        }`}
     >
       <span className={`text-lg ${active ? "text-blue-600" : "text-gray-700"}`}>
         {icon}
@@ -215,7 +387,7 @@ function MailType({ title, desc, emoji }) {
       <div className="text-2xl">{emoji}</div>
       <div>
         <h3 className="font-medium">{title}</h3>
-        <p className="text-xs text-gray-500">{desc}</p>
+        <p className="text-[0.52rem] font-bold text-black">{desc}</p>
       </div>
     </div>
   );

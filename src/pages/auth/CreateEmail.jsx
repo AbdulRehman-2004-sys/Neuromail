@@ -1,7 +1,8 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { EmailContext } from "../../context/EmailContext";
+import { RxCross1 } from "react-icons/rx";
 
 export default function CreateEmail() {
   const { emailData, setEmailData } = useContext(EmailContext);
@@ -11,7 +12,9 @@ export default function CreateEmail() {
   console.log(selectedDomain)
   console.log(typeof (selectedDomain))
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+const navigate = useNavigate();
+
+  console.log(location.state); // debug ke liye
 
   // 🚫 Prevent back navigation
   useEffect(() => {
@@ -77,19 +80,15 @@ export default function CreateEmail() {
       }
 
       const res = await fetch("https://dev.api.neuromail.space/api/mailbox/", {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          local_part: localPart.trim(),
-          domain: selectedDomain,
-        }),
+        }
       });
 
       const data = await res.json().catch(() => ({}));
-console.log(data)
+      console.log(data)
 
       if (!res.ok) {
         const errMsg =
@@ -109,14 +108,14 @@ console.log(data)
       const createdEmail =
         data.email || `${localPart}@${selectedDomainName}`;
 
-      setEmailData({ 
+      setEmailData({
         email: createdEmail,
         localPart: localPart.trim(),
         domainId: selectedDomain,
       });
 
       const emailData = {
-        mailBoxId:data.id,
+        mailBoxId: data.id,
         email: createdEmail,
         localPart: localPart.trim(),
         domainId: selectedDomain,
@@ -134,64 +133,87 @@ console.log(data)
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-50">
-      <div className="w-full md:w-[80vw] flex items-center justify-center p-6">
-        <div className="bg-white shadow-md rounded-xl p-10 w-full max-w-lg">
+    <div className="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-50 px-4 md:px-0">
+      <div className="w-full md:w-[60vw] h-auto md:h-[85vh] flex items-center justify-center py-8 md:py-0">
+        <div className="bg-white relative w-full h-full rounded-md px-6 sm:px-12 md:px-16 py-8 sm:py-16 md:py-24">
+
+          {/* Close button */}
+          <button
+            onClick={() => navigate("/create-mail")}
+            className="absolute top-4 right-4 text-gray-500"
+            aria-label="Go Back"
+          >
+            <RxCross1 size={20} />
+          </button>
+
           {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <img className="w-52" src="https://mailing.neuromail.digital/logoName.svg" alt="" />
+          <div className="flex justify-center mb-4 sm:mb-6 md:mb-6">
+            <img className="w-40 sm:w-48 md:w-52" src="https://mailing.neuromail.digital/logoName.svg" alt="Logo" />
           </div>
 
           {/* Title */}
-          <h2 className="text-center text-xl md:text-2xl font-semibold mb-8">
+          <h2 className="text-center text-lg sm:text-xl md:text-2xl font-bold mb-8 sm:mb-12 md:mb-16 px-2">
             Create your first email address for free
           </h2>
 
           {/* Form */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="Name here"
-                value={localPart}
-                onChange={(e) => setLocalPart(e.target.value)}
-                className="w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
 
-              <select
-                value={selectedDomain}
-                onChange={(e) => setSelectedDomain(e.target.value)}
-                className="w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="" disabled>
-                  Select a domain
-                </option>
-                {domains.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
+              {/* Name input */}
+              <div className="w-full md:w-[60%]">
+                <h1 className="text-md text-gray-600 font-semibold mb-1">Enter Name</h1>
+                <input
+                  type="text"
+                  placeholder="Name here"
+                  value={localPart}
+                  onChange={(e) => setLocalPart(e.target.value)}
+                  className="w-full bg-[#edf0f3] rounded-lg px-4 py-3 outline-none text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Domain select */}
+              <div className="w-full md:w-[40%]">
+                <h1 className="text-md text-gray-600 font-semibold mb-1">Choose extension</h1>
+                <select
+                  value={selectedDomain}
+                  onChange={(e) => setSelectedDomain(e.target.value)}
+                  className="w-full bg-[#edf0f3] rounded-lg px-4 py-3 outline-none text-sm sm:text-base"
+                >
+                  <option value="" disabled>
+                    Select a domain
                   </option>
-                ))}
-              </select>
+                  {domains.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
             </div>
 
-            <button
-              onClick={handleCreateEmail}
-              disabled={loading || !selectedDomain}
-              className="w-full bg-blue-400 text-white font-medium py-2 rounded-lg hover:bg-blue-500 transition disabled:opacity-50"
-            >
-              {loading ? "Creating..." : "Next"}
-            </button>
+            {/* Submit button */}
+            <div className="w-full sm:w-[80%] md:w-[62%] mx-auto mt-4">
+              <button
+                onClick={handleCreateEmail}
+                disabled={loading || !selectedDomain}
+                className="w-full bg-blue-400 text-white font-medium py-2 rounded-lg hover:bg-blue-500 transition disabled:opacity-50"
+              >
+                {loading ? "Creating..." : "Next"}
+              </button>
 
-            <p className="text-gray-500 text-sm text-center mt-2">
-              Note: This email is free, your next email address will cost 10 USD
-              per domain, charged from your primary wallet.
-            </p>
+              <p className="text-gray-500 text-xs sm:text-sm mt-2">
+                Note: This email is free, your next email address will cost 10 USD per domain, charged from your primary wallet.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
   );
 }
 
 
-//SALAD KING CUP CAR GRAPE HILL NOSE BAND MOUSE SCHOOL PEN POTATO QUALITY BITE OCTOPUS WALL
+//TRUCK VACCINE NORTH TRUCK ELK NICE SILK ALERT URBAN WISH ICE VOLCANO ICE UNDER USE WALL

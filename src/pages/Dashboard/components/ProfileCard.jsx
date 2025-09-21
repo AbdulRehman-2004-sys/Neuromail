@@ -23,6 +23,9 @@ export default function ProfileCard({ setShowProfile }) {
     navigate("/login", { replace: true });
   };
 
+  const handleAddEmail = () => {
+    navigate("/create-mail");
+  };
   return (
     <div
       className="
@@ -78,8 +81,8 @@ export default function ProfileCard({ setShowProfile }) {
 
       {/* Actions */}
       <div className="mt-6 flex w-full">
-        <button className="flex-1 flex items-center justify-center gap-1 px-3 py-3 rounded-l-full bg-white hover:bg-gray-100 text-gray-700 text-sm">
-          <IoAddSharp /> Add email address
+        <button onClick={handleAddEmail} className="flex-1 flex items-center justify-center px-3 py-3 rounded-l-full bg-white hover:bg-gray-100 text-gray-700 text-sm whitespace-nowrap gap-1.5">
+          <span className="p-0.5 rounded-full bg-gray-200"><IoAddSharp className="text-blue-600" /></span> Add email address
         </button>
         <button
           onClick={handleSignOut}

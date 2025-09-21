@@ -10,6 +10,7 @@ export const EmailProvider = ({ children }) => {
   });
   console.log(emailData);
   const [emailDetail,setEmailDetail] = useState()
+  console.log(emailDetail);
   const [replyMail,setReplyMail] = useState([])
   const [forwardMail,setForwardMail] = useState()
   const [bodyShow,setBodyShow] = useState({})
