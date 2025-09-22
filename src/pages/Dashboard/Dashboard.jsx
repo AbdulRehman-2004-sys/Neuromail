@@ -18,13 +18,12 @@ export default function Dashboard() {
   const childRef = useRef(null);
   const navigate = useNavigate();
 
-  const mailbox = JSON.parse(localStorage.getItem("mailbox"));
+  const mailbox = JSON.parse(localStorage.getItem("mailbox") || "[]");
   const emailData = JSON.parse(localStorage.getItem("emailData")) || {
     email: "user@example.com",
     localPart: "User",
   };
-  const allMails = JSON.parse(localStorage.getItem("allMails"))
-  // const allMails = [{email:"data"}]
+  const allMails = JSON.parse(localStorage.getItem("allMails")) || [];
   const token = localStorage.getItem("accessToken");
 
 
